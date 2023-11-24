@@ -1,0 +1,143 @@
+slip 25
+1->
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+// Function to sort an integer array using bubble sort
+void bubbleSort(int arr[], int n) {
+  for (int i = 0; i < n - 1; i++) {
+  for (int j = 0; j < n - i - 1; j++) {
+  if (arr[j] > arr[j + 1]) {
+  int temp = arr[j];
+  arr[j] = arr[j + 1];
+  arr[j + 1] = temp;
+  }
+  }
+  }
+}
+
+// Function to perform binary search on a sorted integer array
+int binarySearch(int arr[], int low, int high, int key) {
+  while (low <= high) {
+  int mid = low + (high - low) / 2;
+  if (arr[mid] == key) {
+  return mid;
+  } else if (arr[mid] < key) {
+  low = mid + 1;
+  } else {
+  high = mid - 1;
+  }
+  }
+  return -1; // Key not found
+}
+
+int main() {
+  int arr[] = {5, 2, 8, 12, 3};
+  int n = sizeof(arr) / sizeof(arr[0]);
+
+  // Fork a child process
+  pid_t pid = fork();
+
+  if (pid == 0) {
+  // Child process
+  char *args[3];
+  args[0] = "./binary_search"; // Name of the new program to be executed
+  args[1] = (char *)malloc(10 * sizeof(char)); // Allocate memory for the sorted array
+  args[2] = NULL; // End of arguments
+
+  // Sort the array
+  bubbleSort(arr, n);
+
+  // Convert the sorted array to a string
+  sprintf(args[1], "%d", arr[0]);
+  for (int i = 1; i < n; i++) {
+  sprintf(args[1], "%s %d", args[1], arr[i]);
+  }
+
+  // Execute the new program with the sorted array as command line arguments
+  execve(args[0], args, NULL);
+  } else if (pid > 0) {
+  // Parent process
+  wait(NULL); // Wait for the child process to finish
+  printf("Child process completed.\n");
+  } else {
+  // Forking failed
+  printf("Forking failed.\n");
+  return 1;
+  }
+
+  return 0;
+}
+
+2->
+#include <sys/types.h> 
+#include <sys/stat.h> 
+#include <fcntl.h> 
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <unistd.h> 
+#include <string.h> 
+void make_toks(char *s, char *tok[]) 
+{ 
+int i=0; 
+char *p; 
+p = strtok(s," "); 
+while(p!=NULL) 
+{ 
+ tok[i++]=p; 
+ p=strtok(NULL," "); 
+} 
+tok[i]=NULL; 
+} 
+void search(char *fn, char op, char *pattern) 
+{ 
+FILE *fh; 
+int count = 0; 
+char line[80]; 
+fh = fopen(fn, "r"); 
+if (fh == NULL) 
+{ 
+printf("File %s not found.\n", fn); 
+return; 
+} 
+while (fgets(line, 80, fh) != NULL) 
+{ 
+if (strstr(line, pattern) != NULL) 
+{ 
+count++; 
+if (op == 'a') 
+printf("%s", line); 
+} 
+} 
+fclose(fh); 
+if (op == 'c') 
+printf("Number of occurrences: %d\n", count); 
+} 
+int main() 
+{ 
+char buff[80],*args[10]; 
+int pid; 
+while(1) 
+{ 
+ printf("myshell$ "); 
+ fflush(stdin); 
+ fgets(buff,80,stdin); 
+ buff[strlen(buff)-1]='\0'; 
+ make_toks(buff,args); 
+if (strcmp(args[0], "search") == 0) 
+search(args[2], args[1][0], args[3]); 
+else 
+ { 
+ pid = fork(); 
+ if(pid>0) 
+ wait();
+  else 
+ { 
+ if(execvp(args[0],args)==-1)
+ printf("Bad command.\n"); 
+ } 
+ } 
+} 
+return 0; 
+}
